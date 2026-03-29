@@ -170,7 +170,13 @@ def run_claude(
 ) -> CLIResult:
     """Run Claude Code CLI in non-interactive mode with streaming output."""
     return _run_agent(
-        cmd=["claude", "-p", "--model", "opus", "--permission-mode", "bypassPermissions"],
+        cmd=[
+            "claude", "-p",
+            "--model", "opus",
+            "--permission-mode", "bypassPermissions",
+            "--output-format", "stream-json",
+            "--verbose",
+        ],
         prompt=prompt,
         cwd=cwd,
         timeout=timeout,
