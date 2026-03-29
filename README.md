@@ -1,6 +1,6 @@
 # Dual-Agent Builder
 
-Two AI agents build your full-stack app while you sleep. Codex handles backend, Claude handles frontend. A shared TypeScript contract layer keeps them in sync. 20-pass Playwright design iteration makes it look premium.
+Two AI agents build your full-stack app while you sleep. Codex handles backend, Claude handles frontend. A shared TypeScript contract layer keeps them in sync. 5-pass Playwright design iteration makes it look premium.
 
 **Born from:** Building [QuoteFast](https://quotefast.com.au) — 14 sprints, 5 completed autonomously in one session, total cost under $50.
 
@@ -143,30 +143,27 @@ dual-agent-builder/
 ├── examples/
 │   └── quotefast/
 │       └── config.py        ← Real config from QuoteFast
-└── ideas/                   ← Product ideas to build with this
-    ├── README.md            ← Top 5 ideas overview
-    ├── 01-agent-cost-controller.md
-    ├── 02-agent-regression-preventer.md
-    ├── 03-mcp-server-hosting.md
-    ├── 04-voice-agent-testing.md
-    ├── 05-vertical-intel-dashboard.md
-    └── basagent/            ← Full build prompt example
-        └── BUILD-PROMPT.md  ← Paste this to build BasAgent
+└── ideas/                   ← AU product ideas from uptrail-ventures research
+    ├── README.md            ← All 20 ventures ranked by speed-to-revenue
+    ├── shieldau/BUILD-PROMPT.md   ← Vanta for AU (Essential Eight) — 20/25
+    ├── strataflow/BUILD-PROMPT.md ← AI strata management — 20/25
+    ├── spendpilot/BUILD-PROMPT.md ← Ramp for AU expenses — 19/25
+    └── briefmate/BUILD-PROMPT.md  ← AI legal assistant — $8B market
 ```
 
-## Product Ideas (Built With This Method)
+## Product Ideas (From uptrail-ventures Research)
 
-The `ideas/` directory contains 5 validated product ideas, each scorable on the TEMPO framework (Timing, Ecosystem, Monetizable, Personal fit, Opportunity window). Each has a gap analysis, buyer persona, V1 scope, and pricing.
+The `ideas/` directory contains the top 4 from 20 researched AU SaaS ventures, ranked by fastest path to meaningful money. QuoteFast is already building (Sprint 5+ done).
 
-**BasAgent** (`ideas/basagent/BUILD-PROMPT.md`) includes a complete build prompt — paste it into a new project and run `python3 .buildrunner/run.py unattended` to build an Agent Cost Controller SaaS from scratch.
+Each `BUILD-PROMPT.md` is a complete paste-ready prompt with 14 sprints, contract types, golden jobs, and monitoring setup — identical to the QuoteFast pipeline that's running right now.
 
 ## Key Concepts
 
 ### Contract Layer
 TypeScript files that both agents import. Eliminates the #1 integration bug: mismatched types and routes between backend and frontend.
 
-### 20-Pass Design Iteration
-After code is built, Claude uses Playwright to screenshot every page, review against the design guide, fix issues, and repeat 20 times. Focuses rotate from layout → details → edge cases → final polish.
+### 5-Pass Design Iteration
+After code is built, Claude uses Playwright to screenshot every page, review against the design guide, fix issues, and repeat 5 times. Focuses rotate from layout → details → edge cases → final polish.
 
 ### Circuit Breaker
 3-state (CLOSED → HALF_OPEN → OPEN). Opens after 5 identical errors or 3 loops with no progress. Prevents runaway API spend on unrecoverable errors.

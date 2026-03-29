@@ -46,7 +46,7 @@ Python orchestrator (`.buildrunner/run.py`) runs sprints sequentially:
 5. Update contracts with actual implementation
 6. Claude builds frontend (imports contracts)
 7. Build verification
-8. 20-pass Playwright design iteration
+8. 5-pass Playwright design iteration
 9. Git commit
 10. Stage review + commercial gate
 
@@ -106,7 +106,7 @@ Auto-generate lessons learned at stage boundaries. Without retrospectives, you r
 
 1. Prompts must reference files, not embed them (shell limits)
 2. Contracts eliminate the #1 integration bug (type mismatches)
-3. 20x design iteration catches what 1x doesn't
+3. 5x design iteration catches what 1x doesn't
 4. Commercial gates prevent building to silence
 5. Separate backend/frontend agents = cleaner code
 6. Circuit breakers > infinite retries

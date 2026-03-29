@@ -146,29 +146,14 @@ REQUIRED_DOCS: list[str] = [
 ]
 
 # ─── Design Iteration ───────────────────────────────────────────────
-DESIGN_MAX_PASSES = 20
+DESIGN_MAX_PASSES = 5
 
 DESIGN_ITERATION_FOCUSES: dict[int, str] = {
-    1: "Layout and spacing — elements aligned? Spacing consistent?",
-    2: "Colors — do ALL elements match DESIGN-GUIDE.md hex values?",
-    3: "Typography — correct fonts, sizes, weights per design guide?",
-    4: "Touch targets — every interactive element at least 48-56px?",
-    5: "Loading states — skeleton loaders that match content shape?",
-    6: "Error states — every fetch has error UI with retry?",
-    7: "Empty states — every list page has empty state with CTA?",
-    8: "Dark mode — toggle to dark, check EVERY component",
-    9: "Animations — enter/exit transitions, button feedback, status pulses?",
-    10: "Final quality — overall feel, professional enough for the target user?",
-    11: "Micro-spacing — pixel-perfect alignment, consistent gaps between elements",
-    12: "Interactive states — hover, active, focus, disabled all look intentional",
-    13: "Content hierarchy — most important info scannable in 2 seconds",
-    14: "Edge cases — very long text, very short text, special characters, empty fields",
-    15: "Performance feel — no layout shifts, instant feedback on interactions",
-    16: "Navigation flow — can user find every feature in 3 taps or less?",
-    17: "Visual rhythm — consistent use of rounded corners, shadows, borders across all components",
-    18: "Professional trust — would a paying customer trust this with their business?",
-    19: "Delight details — subtle animations that feel premium, not generic",
-    20: "Final sweep — screenshot every page, compare side by side, fix ANY inconsistency",
+    1: "Layout, spacing, colors — elements aligned? Colors match DESIGN-GUIDE.md?",
+    2: "Typography, touch targets, loading states — correct fonts? 48-56px targets? Skeletons?",
+    3: "Error states, empty states, dark mode — every fetch has error UI? Dark mode works?",
+    4: "Interactive states, edge cases — hover/active/focus look right? Long text handled?",
+    5: "Final sweep — screenshot every page, professional trust check, fix ANY inconsistency",
 }
 
 # ─── Circuit Breaker ────────────────────────────────────────────────

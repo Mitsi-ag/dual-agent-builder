@@ -19,7 +19,7 @@ Per Sprint (automated):
   6. Update contracts with what Codex actually built
   7. Claude builds frontend (reads docs + imports contracts)
   8. Verify pnpm build passes (retry with error context if fails)
-  9. 20-pass Playwright design iteration (screenshot → review → fix)
+  9. 5-pass Playwright design iteration (screenshot → review → fix)
   10. Git commit
   11. Stage review by Codex (at stage boundaries)
   12. Commercial gate check (human checkpoint)
@@ -133,7 +133,7 @@ SPRINT_CONTRACTS = {
 
 After Codex builds the backend, the runner updates contracts with what was actually implemented. Claude then imports these exact types for the frontend.
 
-## Design Iteration (20-Pass Visual Polish)
+## Design Iteration (5-Pass Visual Polish)
 
 After frontend code is built, the runner:
 1. Starts `pnpm dev` server

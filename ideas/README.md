@@ -1,44 +1,68 @@
 # Product Ideas — Build These With Dual-Agent Builder
 
-5 validated product ideas from March 2026 trend research. Each scored on the TEMPO framework, with gap analysis, buyer persona, V1 scope, and pricing.
+From the [uptrail-ventures](https://github.com/Mitsi-ag/uptrail-ventures) research: 20 AU-focused SaaS ideas scored by opportunity, ranked by **fastest path to meaningful money**.
 
-All of these can be built using the dual-agent-builder orchestrator in under 30 days.
+QuoteFast (AI quoting for tradies) is already building autonomously — 5 sprints completed, runner active.
 
-## The Ideas
+## Top 4 Next Builds (by speed-to-revenue)
 
-| # | Idea | TEMPO | First Dollar | Who Pays | Price |
-|---|------|-------|-------------|----------|-------|
-| 1 | **Agent Cost Controller** | 24/25 | Week 3 | Engineering leads, DevOps, CTOs | $49-199/mo |
-| 2 | **Agent Regression Preventer** | 22/25 | Week 4 | Dev teams (10+ devs) | $29-99/dev/mo |
-| 3 | **MCP Server Hosting** | 23/25 | Week 3 | MCP server authors, companies | $29-499/mo |
-| 4 | **Voice Agent Testing** | 21/25 | Week 4 | Companies with voice agents | $99-999/mo |
-| 5 | **Vertical Intel Dashboard** | 20/25 | Week 3 | Analysts, VPs, hedge funds | $79-999/mo |
+| # | Venture | Score | Market | Price | Why Fast |
+|---|---------|-------|--------|-------|----------|
+| 1 | **ShieldAU** | 20/25 | $500M | $199-499/mo | Zero AU competitors in SME tier. Regulatory mandate (Essential Eight). Compliance = checklists + reports = pure software |
+| 2 | **StrataFlow** | 20/25 | $400M | $100-500/mo | 300K strata schemes. Aging workforce. Per-lot pricing. Well-defined workflows |
+| 3 | **SpendPilot** | 19/25 | $500M-1B | $200/mo avg | Ramp model proven ($32B val). 2.5M AU SMBs still on spreadsheets |
+| 4 | **BriefMate** | —/25 | $8B | $49-200/mo | AI legal research = Claude API + document processing. Self-serve law firms |
 
-## TEMPO Scoring Framework
+## Full 20 Ventures (from uptrail-ventures research)
 
-| Criteria | Question |
-|----------|----------|
-| **T**iming | Is this early enough? (1=saturated, 5=emerging) |
-| **E**cosystem | Growing ecosystem around it? (repos, tools, community) |
-| **M**onetizable | Will someone pay? Who specifically? |
-| **P**ersonal fit | Can we build this? (skills, stack, interest) |
-| **O**pportunity window | How long until crowded? (1=months, 5=years) |
+| Venture | What | Market | Score |
+|---------|------|--------|-------|
+| QuoteFast | AI quoting for tradies | $300M | **BUILDING** |
+| ShieldAU | Vanta for AU (Essential Eight) | $500M | 20/25 |
+| StrataFlow | AI strata management | $400M | 20/25 |
+| SpendPilot | Ramp for AU expense management | $500M-1B | 19/25 |
+| BasPilot | AI tax compliance | $500M | —/25 |
+| BriefMate | AI legal assistant | $8B | —/25 |
+| BuildPay | Construction payment automation | $315M | —/25 |
+| CarbonLens | Carbon accounting for SMBs | $200M | —/25 |
+| ClaimFlow | Insurance claims AI | $376M | —/25 |
+| CoverNow | Parametric climate insurance | $8B | —/25 |
+| EnrichAU | AU data enrichment | $200M | —/25 |
+| EquityStack | Equity management | $1.2B | —/25 |
+| MedMatch | Healthcare staffing | $80M | —/25 |
+| OrderDirect | Restaurant direct ordering | $120M | —/25 |
+| PermitPro | Construction permits | $215M | —/25 |
+| PropStack | Property data platform | $200-500M | —/25 |
+| RentReward | Rental rewards | $6B | —/25 |
+| SkillBridge | Workforce skills platform | $2B | —/25 |
+| TeachMate | Teacher tools (ACARA) | $110M | —/25 |
+| TradeHire | Trades recruitment | $200-300M | 17/25 |
 
-20-25=HOT, 15-19=WARM, 10-14=COOL, <10=PASS
+## How to Build Any of These
 
-## Full Build Example: BasAgent
+Each `BUILD-PROMPT.md` contains everything needed:
+1. Product vision + pricing + decisions
+2. 14 sprints with backend/frontend tasks
+3. TypeScript contract types per sprint
+4. Design direction
+5. Golden jobs (test scenarios)
+6. Exact run commands with monitoring + live logging
 
-See `basagent/BUILD-PROMPT.md` for a complete, paste-ready build prompt that creates the Agent Cost Controller from scratch using the dual-agent-builder pipeline. Includes:
-- All 14 sprint definitions
-- Contract types per sprint
-- Planning doc structure
-- Monitoring setup
-- Live development viewing
-
-Run it:
 ```bash
-mkdir basagent && cd basagent
+mkdir my-venture && cd my-venture
+git init
 cp -r /path/to/dual-agent-builder/.buildrunner/ .buildrunner/
-# Follow BUILD-PROMPT.md instructions
-python3 .buildrunner/run.py unattended
+# Follow the BUILD-PROMPT.md for your chosen venture
+# Write planning docs (PRODUCT.md, ARCHITECTURE.md, etc.)
+# Edit .buildrunner/config.py with the sprint/contract config from BUILD-PROMPT.md
+
+# Terminal 1 — Build autonomously
+nohup python3 -u .buildrunner/run.py unattended > .buildrunner/logs/run.log 2>&1 &
+echo $! > .buildrunner/.runner-pid
+
+# Terminal 2 — Watch live development
+tail -f .buildrunner/logs/codex-live.log .buildrunner/logs/claude-live.log
+
+# Terminal 3 — Health monitor every 5 min
+watch -n 300 python3 .buildrunner/monitor.py
 ```
