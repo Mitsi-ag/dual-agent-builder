@@ -13,146 +13,214 @@ You are launching a fully autonomous software development pipeline. This system:
 2. **Phase 2 (Building):** Runs 14 sprints with Codex (backend) + Claude (frontend) over 4-8 hours
 3. **Phase 3 (Supervision):** Ralph monitors every 5 minutes, auto-restarts dead processes, fixes stuck builds
 
-### Step 1: Create the project
-
-```bash
-mkdir -p ~/Dev/[project-name]
-cd ~/Dev/[project-name]
-git init
-cp -r ~/Dev/dual-agent-builder/.buildrunner/ .buildrunner/
-```
-
-### Step 2: Launch the autonomous pipeline
-
-If you have a BUILD-PROMPT.md seed file:
-```bash
-cd ~/Dev/[project-name]
-mkdir -p .buildrunner/logs
-nohup python3 -u .buildrunner/autonomous.py \
-  --name "[ProductName]" \
-  --desc "[One-line description of the product]" \
-  --seed ~/Dev/dual-agent-builder/ideas/[idea-name]/BUILD-PROMPT.md \
-  > .buildrunner/logs/autonomous.log 2>&1 &
-echo $! > .buildrunner/.autonomous-pid
-echo "Autonomous pipeline started (PID: $(cat .buildrunner/.autonomous-pid))"
-```
-
-Without seed (pure AI research):
-```bash
-cd ~/Dev/[project-name]
-mkdir -p .buildrunner/logs
-nohup python3 -u .buildrunner/autonomous.py \
-  --name "[ProductName]" \
-  --desc "[One-line description of the product]" \
-  > .buildrunner/logs/autonomous.log 2>&1 &
-echo $! > .buildrunner/.autonomous-pid
-echo "Autonomous pipeline started (PID: $(cat .buildrunner/.autonomous-pid))"
-```
-
-### Step 3: Set up Ralph supervision (recommended)
-
-Ralph is an autonomous monitoring loop that checks the build every 5 minutes, auto-restarts dead processes, and fixes stuck builds.
-
-```bash
-# Set up Ralph for this project
-cd ~/Dev/[project-name]
-bash ~/Dev/dual-agent-builder/.buildrunner/setup_ralph.sh ~/Dev/[project-name]
-
-# Start Ralph supervisor (tmux 3-pane: loop | live output | dashboard)
-cd ~/Dev/[project-name] && ralph --monitor
-```
-
-Ralph will:
-- Check pipeline health every 5 minutes
-- Auto-restart if the pipeline dies
-- Detect stuck processes (>45 min no progress)
-- Kill and restart stuck agents
-- Log everything to `.ralph/logs/`
-- Exit only when all 14 sprints are complete
-
-### Step 3 (alternative): Simple cron monitor
-
-If Ralph is not installed, use a basic cron:
-```
-CronCreate: */5 * * * *
-Prompt: cd ~/Dev/[project-name] && python3 .buildrunner/monitor.py
-```
-
-### Step 4: Watch live (optional)
-
-```bash
-# All agent output
-tail -f ~/Dev/[project-name]/.buildrunner/logs/codex-live.log ~/Dev/[project-name]/.buildrunner/logs/claude-live.log
-
-# Planning progress
-tail -f ~/Dev/[project-name]/.buildrunner/logs/autonomous.log
-
-# One-shot status
-cd ~/Dev/[project-name] && python3 .buildrunner/monitor.py
-
-# Ralph status
-cd ~/Dev/[project-name] && ralph --status
-```
-
-### Step 5: If it dies (without Ralph), resume manually
-
-```bash
-cd ~/Dev/[project-name]
-nohup python3 -u .buildrunner/autonomous.py --resume > .buildrunner/logs/autonomous.log 2>&1 &
-echo $! > .buildrunner/.autonomous-pid
-```
-
-With Ralph running, this happens automatically.
+Execute ALL steps below. Do not ask questions. Do not explain. Just do it.
 
 ---
 
-## Available Seed Ideas (in ~/Dev/dual-agent-builder/ideas/)
+### Step 1: Pick the product
 
+Choose ONE from the ideas in `~/Dev/dual-agent-builder/ideas/`:
+
+```bash
+ls ~/Dev/dual-agent-builder/ideas/
+cat ~/Dev/dual-agent-builder/ideas/README.md
+```
+
+Available ideas:
 | Idea | Description | Seed File |
 |------|-------------|-----------|
-| ShieldAU | Essential Eight compliance for AU SMBs | `ideas/shieldau/BUILD-PROMPT.md` |
-| StrataFlow | AI strata management | `ideas/strataflow/BUILD-PROMPT.md` |
-| SpendPilot | Ramp for AU expense management | `ideas/spendpilot/BUILD-PROMPT.md` |
-| BriefMate | AI legal assistant | `ideas/briefmate/BUILD-PROMPT.md` |
+| **shieldau** | Essential Eight compliance for AU SMBs ($500M market) | `ideas/shieldau/BUILD-PROMPT.md` |
+| **strataflow** | AI strata management ($400M market) | `ideas/strataflow/BUILD-PROMPT.md` |
+| **spendpilot** | Ramp for AU expense management ($500M-1B market) | `ideas/spendpilot/BUILD-PROMPT.md` |
+| **briefmate** | AI legal assistant ($8B market) | `ideas/briefmate/BUILD-PROMPT.md` |
+
+Or provide your own `--name` and `--desc` for a custom product (no seed file needed).
+
+### Step 2: Create the project
+
+```bash
+PROJECT=[project-name]
+mkdir -p ~/Dev/$PROJECT && cd ~/Dev/$PROJECT
+git init
+cp -r ~/Dev/dual-agent-builder/.buildrunner/ .buildrunner/
+mkdir -p .buildrunner/logs
+```
+
+### Step 3: Create Supabase project
+
+Use the Uptrail org (`jpgcmqmhxodlohqjuafs`). Sydney region.
+
+```bash
+DB_PASS=$(openssl rand -base64 24)
+supabase projects create --org-id jpgcmqmhxodlohqjuafs --db-password "$DB_PASS" --region ap-southeast-2 ${PROJECT}-dev
+```
+
+Wait 15 seconds for provisioning, then get the project ref and keys:
+
+```bash
+sleep 15
+REF=$(supabase projects list -o json | python3 -c "import json,sys; [print(p['id']) for p in json.load(sys.stdin) if p['name']=='${PROJECT}-dev']")
+KEYS=$(supabase projects api-keys --project-ref $REF -o json)
+ANON_KEY=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('name')=='anon' or (k.get('type')=='legacy' and k.get('id')=='anon')]" | head -1)
+SERVICE_KEY=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('name')=='service_role' or (k.get('type')=='legacy' and k.get('id')=='service_role')]" | head -1)
+```
+
+Write `.env.local`:
+```bash
+cat > ~/Dev/$PROJECT/.env.local << ENVEOF
+# === AI Agents ===
+ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+OPENAI_API_KEY=${OPENAI_API_KEY}
+
+# === Supabase (${PROJECT}-dev, Sydney) ===
+NEXT_PUBLIC_SUPABASE_URL=https://${REF}.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SERVICE_KEY}
+
+# === Stripe (add when needed at Sprint 12) ===
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# === Email (add when needed at Sprint 8) ===
+RESEND_API_KEY=
+
+# === App Config ===
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENVEOF
+```
+
+Link Supabase to the project:
+```bash
+cd ~/Dev/$PROJECT && supabase link --project-ref $REF
+```
+
+### Step 4: Launch the autonomous pipeline
+
+With a seed idea from the repo:
+```bash
+cd ~/Dev/$PROJECT
+nohup python3 -u .buildrunner/autonomous.py \
+  --name "[ProductName]" \
+  --desc "[One-line description]" \
+  --seed ~/Dev/dual-agent-builder/ideas/[idea-name]/BUILD-PROMPT.md \
+  > .buildrunner/logs/autonomous.log 2>&1 &
+echo $! > .buildrunner/.autonomous-pid
+echo "Pipeline started (PID: $(cat .buildrunner/.autonomous-pid))"
+```
+
+Without seed (custom product):
+```bash
+cd ~/Dev/$PROJECT
+nohup python3 -u .buildrunner/autonomous.py \
+  --name "[ProductName]" \
+  --desc "[One-line description]" \
+  > .buildrunner/logs/autonomous.log 2>&1 &
+echo $! > .buildrunner/.autonomous-pid
+echo "Pipeline started (PID: $(cat .buildrunner/.autonomous-pid))"
+```
+
+### Step 5: Set up Ralph supervision
+
+```bash
+cd ~/Dev/$PROJECT
+bash ~/Dev/dual-agent-builder/.buildrunner/setup_ralph.sh ~/Dev/$PROJECT
+cd ~/Dev/$PROJECT && ralph --monitor
+```
+
+If Ralph is not installed:
+```bash
+git clone https://github.com/frankbria/ralph-claude-code.git /tmp/ralph-claude-code
+cd /tmp/ralph-claude-code && ./install.sh
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+Then retry the Ralph setup above.
+
+### Step 6: Verify everything is running
+
+```bash
+cd ~/Dev/$PROJECT && python3 .buildrunner/monitor.py
+tail -5 .buildrunner/logs/autonomous.log
+```
+
+---
+
+## Full Example: Build StrataFlow
+
+```bash
+# 1. Create project
+PROJECT=strataflow
+mkdir -p ~/Dev/$PROJECT && cd ~/Dev/$PROJECT
+git init
+cp -r ~/Dev/dual-agent-builder/.buildrunner/ .buildrunner/
+mkdir -p .buildrunner/logs
+
+# 2. Supabase
+DB_PASS=$(openssl rand -base64 24)
+supabase projects create --org-id jpgcmqmhxodlohqjuafs --db-password "$DB_PASS" --region ap-southeast-2 strataflow-dev
+sleep 15
+REF=$(supabase projects list -o json | python3 -c "import json,sys; [print(p['id']) for p in json.load(sys.stdin) if p['name']=='strataflow-dev']")
+KEYS=$(supabase projects api-keys --project-ref $REF -o json)
+ANON_KEY=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('id')=='anon']" | head -1)
+SERVICE_KEY=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('id')=='service_role']" | head -1)
+
+cat > .env.local << ENVEOF
+ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+OPENAI_API_KEY=${OPENAI_API_KEY}
+NEXT_PUBLIC_SUPABASE_URL=https://${REF}.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
+SUPABASE_SERVICE_ROLE_KEY=${SERVICE_KEY}
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+RESEND_API_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENVEOF
+
+supabase link --project-ref $REF
+
+# 3. Launch pipeline
+nohup python3 -u .buildrunner/autonomous.py \
+  --name "StrataFlow" \
+  --desc "AI-powered strata management platform for Australian strata schemes. Levy management, maintenance tracking, AI meeting minutes, compliance engine, owner portal." \
+  --seed ~/Dev/dual-agent-builder/ideas/strataflow/BUILD-PROMPT.md \
+  > .buildrunner/logs/autonomous.log 2>&1 &
+echo $! > .buildrunner/.autonomous-pid
+
+# 4. Ralph supervision
+bash ~/Dev/dual-agent-builder/.buildrunner/setup_ralph.sh ~/Dev/strataflow
+cd ~/Dev/strataflow && ralph --monitor
+```
 
 ---
 
 ## Prerequisites
 
-Ensure these are installed and authenticated:
-- `codex` CLI: `npm install -g @openai/codex` + OPENAI_API_KEY in env
-- `claude` CLI: `npm install -g @anthropic-ai/claude-code` + ANTHROPIC_API_KEY in env
-- `ralph`: `git clone https://github.com/frankbria/ralph-claude-code.git && cd ralph-claude-code && ./install.sh`
-- `pnpm`: `npm install -g pnpm`
-- `node` >= 18
-- `python3` >= 3.10
-- `brew install coreutils` (macOS, for Ralph's timeout)
-- `tmux` (recommended, for Ralph's 3-pane monitor view)
+| Tool | Install | Required |
+|------|---------|----------|
+| `codex` CLI | `npm install -g @openai/codex` + `OPENAI_API_KEY` in env | Yes |
+| `claude` CLI | `npm install -g @anthropic-ai/claude-code` + `ANTHROPIC_API_KEY` in env | Yes |
+| `supabase` CLI | `brew install supabase/tap/supabase` + `supabase login` | Yes |
+| `ralph` | `git clone frankbria/ralph-claude-code && ./install.sh` | Recommended |
+| `pnpm` | `npm install -g pnpm` | Yes |
+| `node` | >= 18 | Yes |
+| `python3` | >= 3.9 | Yes |
+| `coreutils` | `brew install coreutils` (macOS, for Ralph) | For Ralph |
+| `tmux` | `brew install tmux` (for Ralph --monitor view) | Optional |
 
----
+## Supabase Org
 
-## Full Example: Build ShieldAU with Ralph Supervision
+All projects go under the **Uptrail** org: `jpgcmqmhxodlohqjuafs`
+
+Rename in dashboard if still showing as "quotefast": Settings > General > Organization name > "Uptrail"
+
+## If it dies, resume
 
 ```bash
-# 1. Create project
-mkdir -p ~/Dev/shieldau && cd ~/Dev/shieldau
-git init
-cp -r ~/Dev/dual-agent-builder/.buildrunner/ .buildrunner/
-
-# 2. Launch autonomous pipeline
-mkdir -p .buildrunner/logs
-nohup python3 -u .buildrunner/autonomous.py \
-  --name "ShieldAU" \
-  --desc "Essential Eight compliance platform for Australian SMBs. AI-powered maturity assessment, evidence vault, remediation tracking, and auditor-ready PDF reports." \
-  --seed ~/Dev/dual-agent-builder/ideas/shieldau/BUILD-PROMPT.md \
-  > .buildrunner/logs/autonomous.log 2>&1 &
+cd ~/Dev/$PROJECT
+nohup python3 -u .buildrunner/autonomous.py --resume > .buildrunner/logs/autonomous.log 2>&1 &
 echo $! > .buildrunner/.autonomous-pid
-
-# 3. Set up Ralph supervision
-bash ~/Dev/dual-agent-builder/.buildrunner/setup_ralph.sh ~/Dev/shieldau
-
-# 4. Start Ralph (monitors every 5 min, auto-restarts, auto-recovers)
-cd ~/Dev/shieldau && ralph --monitor
 ```
 
-Then walk away. Ralph watches the build. You come back to a finished app.
+With Ralph running, this happens automatically.
