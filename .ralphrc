@@ -1,0 +1,31 @@
+# Ralph Configuration — Dual-Agent Builder Supervisor
+# This configures Ralph as a monitoring/supervision layer,
+# NOT as the primary builder (Codex + Claude do that).
+
+PROJECT_NAME="dual-agent-supervisor"
+PROJECT_TYPE="python"
+
+# Check every 5 minutes (12 calls/hour)
+MAX_CALLS_PER_HOUR=12
+
+# 10-minute timeout per supervision check (plenty for monitoring)
+CLAUDE_TIMEOUT_MINUTES=10
+
+# Output format
+CLAUDE_OUTPUT_FORMAT=json
+
+# Session continuity (Ralph keeps context between checks)
+SESSION_CONTINUITY=true
+SESSION_EXPIRY_HOURS=24
+
+# Circuit breaker — lenient for monitoring (not building)
+CB_NO_PROGRESS_THRESHOLD=6
+CB_SAME_ERROR_THRESHOLD=5
+CB_COOLDOWN_MINUTES=15
+CB_AUTO_RESET=true
+
+# Tools Ralph's Claude session can use
+ALLOWED_TOOLS="Read Write Edit Bash(cd *) Bash(python3 *) Bash(cat *) Bash(tail *) Bash(head *) Bash(git *) Bash(kill *) Bash(ps *) Bash(nohup *) Bash(echo *) Bash(sleep *)"
+
+# Verbose logging for supervision
+RALPH_VERBOSE=true
