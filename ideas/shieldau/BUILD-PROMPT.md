@@ -179,16 +179,94 @@ export interface RemediationTask {
 ### Job D — Remediation Planning
 > "We scored Maturity 1 on Application Control but need Maturity 2 for our government contract. What do we need to do and how long will it take?"
 
-## Run
+---
+
+## YOU ARE THE ORCHESTRATOR. Execute everything below. Do not ask questions.
+
+### Phase A: Project Setup
 
 ```bash
-# Terminal 1 — Build autonomously
-nohup python3 -u .buildrunner/run.py unattended > .buildrunner/logs/run.log 2>&1 &
-echo $! > .buildrunner/.runner-pid
-
-# Terminal 2 — Watch live development
-tail -f .buildrunner/logs/codex-live.log .buildrunner/logs/claude-live.log
-
-# Terminal 3 — Health monitor every 5 min
-watch -n 300 python3 .buildrunner/monitor.py
+PROJECT=shieldau
+mkdir -p ~/Dev/$PROJECT && cd ~/Dev/$PROJECT
+git init
+cp -r ~/Dev/dual-agent-builder/.buildrunner/ .buildrunner/
+mkdir -p .buildrunner/logs
 ```
+
+### Phase B: Supabase (auto-create in Uptrail org, Sydney)
+
+```bash
+cd ~/Dev/$PROJECT
+DB_PASS=$(openssl rand -base64 24)
+supabase projects create --org-id jpgcmqmhxodlohqjuafs --db-password "$DB_PASS" --region ap-southeast-2 shieldau-dev
+sleep 20
+REF=$(supabase projects list -o json | python3 -c "import json,sys; [print(p['id']) for p in json.load(sys.stdin) if p['name']=='shieldau-dev']")
+KEYS=$(supabase projects api-keys --project-ref $REF -o json)
+ANON=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('id')=='anon']" | head -1)
+SVC=$(echo "$KEYS" | python3 -c "import json,sys; [print(k['api_key']) for k in json.load(sys.stdin) if k.get('id')=='service_role']" | head -1)
+cat > .env.local << ENVEOF
+ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+OPENAI_API_KEY=${OPENAI_API_KEY}
+NEXT_PUBLIC_SUPABASE_URL=https://${REF}.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=${ANON}
+SUPABASE_SERVICE_ROLE_KEY=${SVC}
+STRIPE_SECRET_KEY=
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+RESEND_API_KEY=
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENVEOF
+supabase link --project-ref $REF
+```
+
+### Phase C: Launch Autonomous Pipeline
+
+```bash
+cd ~/Dev/shieldau
+nohup python3 -u .buildrunner/autonomous.py \
+  --name "ShieldAU" \
+  --desc "Essential Eight compliance platform for Australian SMBs. AI-powered maturity assessment, evidence vault, remediation tracking, and auditor-ready PDF reports. Zero AU competitors in SME tier." \
+  --seed ~/Dev/dual-agent-builder/ideas/shieldau/BUILD-PROMPT.md \
+  > .buildrunner/logs/autonomous.log 2>&1 &
+echo $! > .buildrunner/.autonomous-pid
+echo "Pipeline started (PID: $(cat .buildrunner/.autonomous-pid))"
+```
+
+### Phase D: Verify Launch
+
+```bash
+sleep 10
+cd ~/Dev/shieldau && python3 .buildrunner/monitor.py
+tail -5 .buildrunner/logs/autonomous.log
+```
+
+### Phase E: YOU BECOME THE MONITOR
+
+Set up a cron to check every 5 minutes. You stay in this session as the supervisor.
+
+Use CronCreate with cron "*/5 * * * *" and this prompt:
+
+Run the ShieldAU pipeline monitor and report status:
+```bash
+cd ~/Dev/shieldau && python3 .buildrunner/monitor.py 2>&1
+```
+Also check the last 5 lines of the autonomous log:
+```bash
+tail -5 ~/Dev/shieldau/.buildrunner/logs/autonomous.log 2>/dev/null
+```
+If status is DEAD, restart immediately:
+```bash
+cd ~/Dev/shieldau && nohup python3 -u .buildrunner/autonomous.py --resume > .buildrunner/logs/autonomous.log 2>&1 & echo $! > .buildrunner/.autonomous-pid
+```
+If STUCK (>45 min), kill and restart:
+```bash
+kill $(cat ~/Dev/shieldau/.buildrunner/.autonomous-pid) 2>/dev/null; sleep 5; cd ~/Dev/shieldau && nohup python3 -u .buildrunner/autonomous.py --resume > .buildrunner/logs/autonomous.log 2>&1 & echo $! > .buildrunner/.autonomous-pid
+```
+If RUNNING, give a one-line summary. If COMPLETE, report final status and stop the cron.
+
+After setting up the cron, confirm: "Monitoring active. ShieldAU pipeline running. Checking every 5 minutes."
+
+### What happens (no action needed)
+- **Phase 1 (6-9 hours):** Codex runs 12 planning passes
+- **Phase 2 (4-8 hours):** Codex backend + Claude frontend, 14 sprints, 5-pass design iteration
+- **You** check every 5 min, auto-restart if dead, kill+restart if stuck
