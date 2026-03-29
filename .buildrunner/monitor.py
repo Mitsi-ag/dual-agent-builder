@@ -19,6 +19,8 @@ Checks:
   7. Planning pass progress (X/12 passes complete)
 """
 
+from __future__ import annotations
+
 import os
 import sys
 import json
