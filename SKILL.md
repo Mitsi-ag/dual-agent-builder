@@ -1,6 +1,6 @@
 ---
 name: dual-agent-builder
-description: Orchestrate two AI agents (Codex backend + Claude frontend) to build full-stack apps sprint by sprint with shared contract layer, circuit breakers, 20-pass design iteration, and autonomous monitoring
+description: Orchestrate two AI agents (Codex backend + Claude frontend) to build full-stack apps sprint by sprint with shared contract layer, circuit breakers, 5-pass design iteration, and autonomous monitoring
 ---
 
 # Dual-Agent Builder
@@ -141,16 +141,15 @@ After frontend code is built, the runner:
 3. Reviews against DESIGN-GUIDE.md
 4. Fixes issues in component source files
 5. Screenshots again to verify
-6. Repeats 20 times with rotating focus:
+6. Repeats 5 times with rotating focus:
 
 | Pass | Focus |
 |------|-------|
-| 1-3 | Layout, colors, typography |
-| 4-6 | Touch targets, loading states, error states |
-| 7-9 | Empty states, dark mode, animations |
-| 10-14 | Edge cases, navigation flow, interactive states |
-| 15-18 | Professional trust, visual rhythm, micro-spacing |
-| 19-20 | Final sweep — screenshot every page, fix ANY inconsistency |
+| 1 | Layout, spacing, alignment |
+| 2 | Colors matching design guide |
+| 3 | Typography, touch targets |
+| 4 | Loading/error/empty states |
+| 5 | Final polish — dark mode, animations, professional quality |
 
 ## Circuit Breaker
 
