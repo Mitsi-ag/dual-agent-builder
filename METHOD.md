@@ -184,3 +184,7 @@ Auto-generate lessons learned at stage boundaries. Without retrospectives, you r
 13. AI builders leave placeholder content (empty mockups, "App Preview" boxes) — scan every marketing page visually before shipping
 14. Supabase auth config must be pushed via `supabase config push` — CLI stores credentials in macOS Keychain (`Supabase CLI` service name)
 15. Deployment checklist is non-negotiable: signup must work, magic links must redirect to production, no placeholder content
+16. Middleware auth redirects break service workers — exclude `sw.js` and static `.js` files from the matcher
+17. Fixed bottom bars on mobile WILL overlap the mobile nav — always use `bottom-[calc(56px+safe-area)]` on action bars
+18. AI builders leave "No customer" bugs — customer association must be tested E2E (create customer → create quote → verify link)
+19. Must do DESTRUCTIVE testing (empty inputs, XSS, SQL injection, invalid data, rapid clicks) not just happy path
