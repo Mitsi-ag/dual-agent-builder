@@ -124,24 +124,36 @@ Prompt: cd /path/to/project && pnpm build && pnpm test && pnpm lint
 
 Automated deployment pipeline:
 
-1. **Supabase** — Apply all migrations, verify RLS policies
-2. **Vercel** — Connect repo, set env vars, deploy
-3. **DNS** — Point custom domain
-4. **Stripe** — Create products/prices matching PLAN_LIMITS, configure webhook URL
-5. **SMS/Email** — Configure Twilio/Resend with real credentials
-6. **Monitoring** — Vercel Analytics, Sentry error tracking
+1. **GitHub** — `gh repo create org/project --private --source=. --push`
+2. **Vercel** — `vercel link --yes && vercel --prod --yes`
+3. **Env vars** — Pipe `.env.local` to `vercel env add` for production
+4. **Supabase migrations** — `supabase db push`
+5. **Supabase auth URLs** — **CRITICAL: Update Site URL + Redirect URLs to production domain** (not localhost!)
+6. **DNS** — Point custom domain via Vercel
+7. **Stripe** — Create products/prices matching PLAN_LIMITS, configure webhook URL to production
+8. **SMS/Email** — Configure Twilio/Resend with real credentials
+9. **Monitoring** — Vercel Analytics, Sentry error tracking
 
-```bash
-# Deploy via Codex
-codex exec --full-auto --ephemeral - <<'EOF'
-Deploy the project:
-1. Run `vercel --prod` (or `vercel link` first if needed)
-2. Set all env vars from .env.local via `vercel env add`
-3. Apply Supabase migrations: `supabase db push`
-4. Verify deployment: curl the production URL
-5. Run E2E tests against production
-EOF
+**Deployment checklist (MUST verify before calling it "deployed"):**
 ```
+[ ] curl production URL returns 200
+[ ] Signup flow works (not redirecting to localhost)
+[ ] Magic link email arrives and redirects to production URL
+[ ] Supabase Site URL points to production (not localhost:3000)
+[ ] Supabase Redirect URLs include production /api/auth/callback
+[ ] NEXT_PUBLIC_APP_URL env var set to production URL on Vercel
+[ ] Landing page has no placeholder content ("App Preview" boxes, lorem ipsum)
+[ ] All marketing pages render with real content (no broken images)
+[ ] Auth callback handles both GET (OAuth redirect) and POST (code exchange)
+[ ] Stripe webhook URL points to production /api/webhooks/stripe
+```
+
+**Common deployment bugs (from QuoteFast):**
+- Supabase magic link redirects to `localhost:3000` — must update Site URL in Supabase dashboard
+- Landing page "App Preview" placeholder — AI builders leave these, must replace with real mockup/screenshot
+- Env vars with `localhost` values deployed to production — check NEXT_PUBLIC_APP_URL
+- `eslint-config-next` + ESLint 9 flat config incompatibility — use `typescript-eslint` directly
+- Unused imports left by AI builders — run lint after build, fix before deploy
 
 ### Phase 10: Post-Stage Retrospective
 
@@ -168,3 +180,7 @@ Auto-generate lessons learned at stage boundaries. Without retrospectives, you r
 9. Tests after build, not during — AI builders introduce unused imports that waste test time
 10. Deploy immediately after tests pass — a demo nobody can access isn't a product
 11. Ralph Mode (continuous self-assessment) catches what single-pass review misses
+12. ALWAYS test auth flow end-to-end on production before calling it "deployed" — Supabase Site URL defaults to localhost
+13. AI builders leave placeholder content (empty mockups, "App Preview" boxes) — scan every marketing page visually before shipping
+14. Supabase auth config must be pushed via `supabase config push` — CLI stores credentials in macOS Keychain (`Supabase CLI` service name)
+15. Deployment checklist is non-negotiable: signup must work, magic links must redirect to production, no placeholder content
